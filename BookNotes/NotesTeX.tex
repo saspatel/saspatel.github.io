@@ -1,0 +1,707 @@
+\documentclass[10pt]{article}
+\usepackage{ReleaseV3/NotesTeX}
+\usepackage{lipsum}
+%\usepackage{showframe}
+\usepackage{xcolor}
+\usepackage{tikz}
+\newcount\bracketlevel
+\usepackage{intcalc}
+\newcommand{\altbrackets}[1]{%
+  \advance\bracketlevel by 1
+  \ifnum\intcalcMod{\bracketlevel}{3}=0
+    \left(#1\right)
+  \else
+    \ifnum\intcalcMod{\bracketlevel}{3}=1
+        \left\{#1\right\}
+    \else
+        \left[#1\right]
+    \fi
+  \fi
+  \advance\bracketlevel by -1
+}
+
+\newcommand{\cbra}[1]{{\altbrackets{#1}}}
+
+\usepackage{float}
+\usepackage[noabbrev,capitalize,nameinlink]{cleveref}
+\allowdisplaybreaks
+\newcommand{\E}[1]{\mathbb{E}\altbrackets{#1}}
+%\newcommand{\var}[1]{\mathsf{Var}\left\{#1\right\}}
+\newcommand{\cov}{\mathsf{Cov}}
+\newcommand{\prob}{\mathbb{P}}
+\newcommand{\nullprob}{\mathsf{P}_{H_0}}
+\newcommand{\altprob}{\mathsf{P}_{H_a}}
+
+\newcommand{\eps}{\varepsilon}
+\renewcommand{\phi}{\varphi}
+
+\newcommand{\iid}{\overset{\text{\tiny iid}}{\sim}}
+\newcommand{\cd}{\overset{\text{\sc d}}{\to}}
+%\newcommand{\cp}{\overset{\text{\sc p}}{\to}}
+\newcommand{\cdnull}{\overset{\text{\sc d}}{\underset{H_0}{\to}}}
+
+\newcommand{\nm}{\mathsf{N}}
+\newcommand{\ber}{\mathsf{Ber}}
+\newcommand{\bin}{\mathsf{Bin}}
+\newcommand{\pois}{\mathsf{Pois}}
+\newcommand{\expo}{\mathsf{Exp}}
+\newcommand{\gam}{\mathsf{Gam}}
+\newcommand{\unif}{\mathsf{Unif}}
+\newcommand{\be}{\mathsf{Beta}}
+\newcommand{\chisq}{\mathsf{ChiSq}}
+\newcommand{\pareto}{\mathsf{Pareto}}
+
+\newcommand{\Xbar}{\bar{X}}
+\newcommand{\xbar}{\overline{x}}
+\newcommand{\sampset}{{i=1,\dots,n}}
+
+\newcommand{\CC}{\mathcal{C}}
+\newcommand{\RR}{\mathbb{R}}
+
+\newcommand{\cb}{{\sf CB}}
+
+\newcommand{\e}[1]{\mathsf{exp}\altbrackets{#1}}
+\newcommand{\logar}[1]{\mathsf{log}\altbrackets{#1}}
+\newcommand{\I}[1]{\mathbb{I}\altbrackets{#1}}
+\newcommand{\product}{\prod_{i=1}^n}
+\newcommand{\summation}{\sum_{i=1}^n}
+\newcommand{\mle}[1]{\hat#1_{\mathsf{MLE}}}
+\newcommand{\orderstat}[2]{#1_{(#2)}}
+\newcommand{\sampmean}[1]{\overline{#1_n}}
+
+\newcommand{\parenth}[1]{{\left(#1\right)}}
+\newcommand{\bracketh}[1]{{\left\{#1\right\}}}
+\newcommand{\sqrbracketh}[1]{{\left[#1\right]}}
+\newcommand{\deriv}[1]{\frac{\partial}{\partial #1}}
+\newcommand{\secderiv}[1]{\frac{\partial^2}{\partial #1^2}}
+\newcommand{\approxdist}{\dot\sim}
+\newcommand{\liminfty}[1]{\lim_{#1 \rightarrow \infty}}
+\newcommand{\limzero}[1]{\lim_{#1 \rightarrow 0}}
+\newcommand{\simnull}{\underset{H_0}{\sim}}
+\newcommand{\F}{\mathcal{F}}
+\newcommand{\probspace}{(\Omega, \F, \prob)}
+
+
+\usepackage{scalerel,stackengine}
+\stackMath
+\newcommand\reallywidehat[1]{%
+\savestack{\tmpbox}{\stretchto{%
+  \scaleto{%
+    \scalerel*[\widthof{\ensuremath{#1}}]{\kern.1pt\mathchar"0362\kern.1pt}%
+    {\rule{0ex}{\textheight}}%WIDTH-LIMITED CIRCUMFLEX
+  }{\textheight}% 
+}{2.4ex}}%
+\stackon[-6.9pt]{#1}{\tmpbox}%
+}
+\parskip 1ex
+
+\begin{document}
+
+	\title{{Counting Process and Survival Analysis}\\{\normalsize{\itshape Casually Explained with Assistance from Dr. Tsiatis}}}
+	\author{Sahil Patel}
+	\affiliation{
+	Graduate Student at the North Carolina State University\\
+	}
+	\emailAdd{sspate27@ncsu.edu}
+	\maketitle
+	\newpage
+
+        \part{Acknowledgements}
+        Thanks to Dr. Lu and Dr. Tsiatis for the notes. These notes were made referencing these notes, along with the book these notes are titled after. These notes are also built upon the advanced survival analysis notes from both Duke University which have some supplemental slides from the University of Pennsylvania. Also, a thanks to Aditya Dhumuntarao for posting this notes template which I, and a lot of my peers, make use of.
+
+        I really don't like when people don't show steps, so I show as many steps as I think necessary to make the result clear. Consequently the writeup is probably \textit{very} long.
+
+        I am also doing my 22-year-old-self best, so if you see any errors please let me know!
+
+        \subsection{Things to Fix When I have Time}
+        \subsubsection{Set Up}
+        \begin{itemize}
+            \item Fix the terminology presented in the competing risks framework to make them more clean \textbf{and} consistent
+            \item describe little and big O notation more so that its more motivated? Probably not necessary though after the first example. Also that whole example could be explained so poorly.
+            \item The stuff from \cref{altform:indepsurv_competer} is hard to understand what it means to "cancel" the $du$'s and leaves a lot to be understood about the actual evaluation of these things.
+        \end{itemize}
+        \subsubsection{One Sample Counting Process}
+        \begin{itemize}
+             \item The switch between random variables and data in the notation could possibly be confusing, like in the NA estimator
+            \item define a stochastic process?
+            \item unbiasedness of NA notation is \textit{whack}
+        \end{itemize}
+        \subsection{Counting Process}
+        \begin{itemize}
+            \item left continuity of Y() maybe should be discussed?
+        \end{itemize}
+        \subsubsection{Appendix A}
+        \begin{itemize}
+            \item Talk about 3.13 and the generalities of stochastic integration (convergence and necessity of right continuity)
+            \item mention the steiljes approximation and requirements of left continuity (3.13/3.14)
+        \end{itemize}
+
+
+\newpage
+ 
+	\part{Set Up}
+
+    
+
+    \section{Basic Survival Definitions}
+
+    When doing survival analysis, we have for an observation $i$, we collect information about their failure or censoring time:
+    \begin{itemize}
+        \item $T_i$ failure time
+        \item $U_i$ censoring time
+        \item $X_i = min(T_i, U_i) = T_i \wedge U_i$ are the observation times
+        \item $\delta_i = \mathbb{I}\{T_i \leq U_i\}$ is the failure indicator. It is 1 if we observe the failure, 0 otherwise
+        \item $Z_i$ is some covariate vector.
+    \end{itemize}
+
+    We start with $T$ to be the failure time, and consequently a non-negative random variable with pdf $F_T(t) = P_T(T\leq t)$ that is right continuous ($F_T(t^-) = F_T(t)$) as with any cdf. We then define unique functions associated with $T$.
+
+    \begin{definition}[Survival Function]
+    \label{defn:survfunc}
+        The \textbf{survival function} $S(t)$ is the left continuous function that is defined as the probability of surviving after a point in time $t$.
+        $$S(t) := P(T\geq t)$$
+        Which is consequently left continuous $S(t^+) = S(t)$. We can also define a right continuous version where:
+        $$S(t^-) = P_T(T>t) = 1-F_T(t)$$
+        
+    \end{definition}
+
+    \begin{lemma}
+    \label{altform:survfunc}
+        If $T$ is continuous then $S(t^-) = S(t) = 1-F(t)$, and we get that:
+        \begin{align*}
+            f(t) &= \deriv{t}F(t) = - \deriv{t}S(t) \mn{$-\deriv{t}S(t) = -\deriv{t}\{1-F(t)\} = f(t)$}
+        \end{align*}
+        and we also get that clearly $F(t) = \int_0^t f(u)du$ and that $S(t) = \int_t^\infty f(u)du$
+    \end{lemma}
+
+    \begin{definition}[Mortality Function]
+    \label{defn:mortalityfunc}
+        The \textbf{mortality rate}, $m(t)$, is the proportion of the population who fail between times $t$ and $t+1$ among the people who are still alive at time $t$. This can be mathematically expressed as:
+        $$m(t) = P(t\leq T < t+1 \mid T\geq t)$$
+    \end{definition}
+
+    \begin{definition}[Hazard Function]
+    \label{defn:hazardfunc}
+        We can then define the \textbf{hazard rate} is the limit of the mortality rate, or the instantaneous rate of failure at time $t$ given the individual is alive at time $t$. Expressed as:
+        $$\lambda(t) = \lim_{h\rightarrow0}\frac{P(t\leq T < t+h\mid T\geq t)}{h}$$
+    \end{definition}
+
+    We can then easily see that there are alternate forms to express the hazard rate based on the previous lemma.
+
+    \begin{lemma}
+    \label{altform:hazardfunc}
+        \begin{align*}
+            \lambda(t)=\lim_{h\rightarrow0}\frac{P(t\leq T < t+h\mid T\geq t)}{h} &= \lim_{h\rightarrow 0 } \frac{P(t\leq T < t+h)/h}{P(T\geq t)}\\
+            &= \frac{f(t)}{S(t)} = \frac{\deriv{x}F(x)}{S(t)}\\
+            &= \frac{- \deriv{t}S(t)}{S(t)} \text{ by \cref{altform:survfunc}}\\
+            &= - \deriv{t}\logar{S(t)}
+        \end{align*}
+    \end{lemma}
+
+    \begin{definition}[Cumulative Hazard Function]
+    \label{defn:cumhazfunc}
+        The \textbf{cumulative hazard function,} is just the cumulative hazard function up to a point $t$, or expressed as:
+        $$\Lambda(t) = \int_0^t \lambda(u)du$$
+    \end{definition}
+
+    \begin{lemma}
+    \label{altform:cumhazfunc}
+        We can find an alternate form of the cumulative hazard through:
+        \begin{align*}
+            \Lambda(t) &= \int_0^t \lambda(u)du\\
+            &= \int_0^t -\deriv{t} \logar{S(t)} \text{ by \cref{altform:hazardfunc}}\\
+            &= -\logar{S(t)}
+        \end{align*}
+        which then implies that $S(t) = \exp{-\Lambda(t)}$
+    \end{lemma}
+
+It's important to understand that the hazard rate isn't a probability and thus it can take on any positive value, unlike mortality which is bounded by 1. With the above lemmas, we can now give a new form to the mortality rate
+
+\begin{lemma}
+\label{altform:mortalityfunc}
+A new form of the mortality rate takes the form:
+
+\begin{align*}
+    m(t) &= P(t\leq T < t+1 \mid T\geq t) \text{ by \cref{defn:mortalityfunc}}\\
+    &= \frac{P(t\leq T < t+1}{P(T\geq t)}\\
+    &= \frac{P(T\geq t) - P(T\geq t+1)}{P(T\geq t)}\\
+    &= 1- \frac{P(T\geq t+1)}{P(T\geq t)}\\
+    &= 1 - \frac{S(t+1)}{S(t)} \text{ by \cref{defn:survfunc}}\\
+    &= 1- \frac{\exp{-\Lambda(t+1)}}{\exp{-\Lambda(t)}} \text{ by \cref{altform:survfunc}}\\
+    &= 1-\exp{-\Lambda(t+1) + \Lambda(t)}\\
+    &= 1- \exp{-\int_0^{t+1}\lambda(u)du + \int_0^t\lambda(u)du} \text{ by \cref{defn:cumhazfunc}}\\
+    &= 1- \exp{-\int_t^{t+1}\lambda(u)du}
+\end{align*}
+
+Then note if the probability of an event happening in a single unit of time (event between $t$ and $t+1$) then the hazard is low (if the hazard also doesn't drastically change) then we can provide an approximation for the mortality as:
+
+\begin{align*}
+    m(t) &= 1- \exp{-\int_t^{t+1}\lambda(u)du}\\
+    &\approx 1-\{1-\int_t^{t+1}\lambda(u)du\} \marginnote{ we use the approximation $e^x = 1+x$ for small x}\\
+    &= \int_t^{t+1}\lambda(u)du\\
+    &\approx \lambda(t)
+\end{align*}
+
+\end{lemma}
+
+\section{Competing Risks}
+
+The whole purpose of survival analysis is essentially to handle this issue of censoring. Usually, this is an issue of right censoring, where we observe the starting time for all (usually the time of randomization in an experiment) then fail to record when they "fail" (die). This happens to the person withdrawing from the study or the study ending before the person dies. There is a whole other issue of \textit{competing risks} where the person dies from a cause not associated to what is deemed as a failure. For example, if we are testing a cancer treatment, our definition of failure is death by cancer as it would describe how well the cancer treatment prolongs life. However, if a person dies in a car accident, we are censored from their failure time due to cancer, and the car accident is deemed as a competing risk. 
+
+In this case, we observe $U_i = min\{T_1, ..., T_k\}$ where $T_i$ represents a failure time distribution for the $i$th cause of failure. Since the cause of failure is known to us, we let $\Delta=j$ if $U_i = T_j$ (if we observed that the failure was cause by the $j$th way to fail). \textit{It might be good to keep in mind that some $T_l$ could represent a "censoring failure time"}. From here, we can define the rest of the competing risk framework:
+
+\begin{definition}[Competing Risks Framework]
+\label{defn:competerisk}
+    Similar definitions of all of the above functions exist in the competition risk framework. We now just define a function for each failure model $T_j$, but technically these aren't observable because we only observe $U_i$
+    \begin{itemize}
+        \item \textbf{Cause-Specific Survival Function:} $S^{(j)}(x) = P(T_j\geq x) = \e{-\Lambda^\parenth{j}(x)}$
+        \item \textbf{Cause-Specific Hazard Function:} $\lambda^{(j)}(x) = - \deriv{x}\logar{S^{(j)}(x)}$
+        \item \textbf{Cause-Specific Cumulative Hazard:} $\Lambda^{(j)}(x) = \int_0^x \lambda^\parenth{j} (u)du$
+    \end{itemize}
+
+    As mentioned, we only observe $(U_i, \Delta_i)_\sampset$. So let's describe these distributions:
+
+    \begin{itemize}
+        \item \textbf{Observed Sub-Survival Function:} $S_U^\parenth{j}(t) = P(U\geq t, \Delta=j)$
+        \item \textbf{Total Observed Survival:} $S_U(x) = P(U\geq x) = \sum_{j=1}^k S_U^\parenth{j}(x)$
+        \item \textbf{Marginal Observed CDF:} $F_U^\parenth{j}(t) = P(U\leq t, \Delta=j)$
+        \item \textbf{Cause Specific Hazard:} $\lambda^\parenth{j}_U(x) = \limzero{h} \bracketh{\frac{P(x\leq U < x+h, \Delta=j \mid U\geq x)}{h}}$
+        \item \textbf{Total Observed Hazard:} $\lambda_U(x) =\sum_{j=1}^k \lambda_U^\parenth{j}(x)$
+        \item \textbf{Observed Cumulative Hazard:} $\Lambda_U^\parenth{j}(x) = \int_0^x \lambda_U^\parenth{j}(u)du$
+        \item \textbf{Total Observed Cumulative Hazard:} $\Lambda_U(x) = \sum_{j=1}^k \Lambda_U^\parenth{j}(x)$
+    \end{itemize}
+
+    Note that the \textit{observed} survival function denotes the probability of serving beyond or at time $t$ and eventually dying from cause $j$. This is compared to the \textit{net} survival function that is the probability of surviving at or beyond time $t$ if only cause $j$ was acting on the population.
+    
+\end{definition}
+
+\begin{theorem}[\textbf{1:1 Relationship between Sub-Survival and Cause-Specific Hazard Functions}]
+\label{thm:1:1relationships}
+    This theorem shows that there is a one-to-one relationship between the $K$ sub-distribution functions and the $K$ cause specific hazard functions. This theorem is important as it allows us to say that \textit{either} the survival or hazard function can be used to describe the joint distribution of $(U, \Delta)$
+
+    
+    
+\end{theorem}
+
+\begin{proof} To prove this claim, we show that each function can be derived from the other.
+    \begin{itemize}
+        \item \textit{Cause specific hazard to sub-survival:}
+        \begin{align*}
+            \lambda_U^\parenth{j}(x) &= \limzero{h} \bracketh{\frac{P(x\leq U < x+h, \Delta=j \mid U\geq x)}{h}} \text{ by \cref{defn:competerisk}}\\
+            &= \frac{\limzero{h}\bracketh{h^{-1}P(x\leq U <x+h, \Delta=j)}}{P(U\geq x)} \text{ by defn of marginal prob}\\
+            &= \frac{\limzero{h}\bracketh{h^{-1}\sqrbracketh{S_U^\parenth{j}(x) - S_U^\parenth{j}(x+h)}}}{S_U(x)} \text{by \cref{defn:competerisk}}\\
+            &= \frac{-\deriv{x}S_U^\parenth{j}(x)}{S_U(x)}\\
+            &= \frac{\deriv{x}F_U^\parenth{j}(x)}{S_U(x)} \text{ by \cref{altform:survfunc}}
+        \end{align*}
+        
+        \item \textit{Sub-survival to cause-specific hazard:}\\
+        Note that $S_U(x) = \e{-\Lambda_U(x)}$ by \cref{altform:survfunc}. Then by the above equation
+        $$\lambda_U^\parenth{j}(x) = \frac{\deriv{x}F_U^\parenth{j}(x)}{S_U(x)} = \frac{\deriv{x}F_U^\parenth{j}(x)}{\e{-\Lambda_U(x)}}$$
+        $$\implies \deriv{x}F_U^\parenth{j}(x) = \lambda_U^\parenth{j}(x)\e{-\Lambda_U(x)}$$
+        $$\implies F_U(x) = \int_0^x\lambda_U^\parenth{j}(u)\e{-\Lambda_U(u)}du \text{ after integrating}$$
+        $$\equiv S_U^\parenth{j}(x) = \int_x^\infty \lambda_U^\parenth{j}(u)\e{-\Lambda_U(u)}du$$
+    \end{itemize}
+
+    Thus we are able to recover each equation from another, meaning they are unique for whatever joint distribution of $(U, \Delta)$ that corresponds to the problem.
+\end{proof}
+
+
+Naturally in the problem of competing risks, we don't care about $S_U(x)$ or $S_U^\parenth{j}(x)$ as it aggregates all of the causes of death together, we instead care mostly about $T_j$ acts, or more specifically, how $S^\parenth{j}(x)=P(T_j\geq x)$ acts as it would give us information about that one cause of failure. However, we only observe instances of $(U_i, \Delta_i)$ not $T_j$. In the case that $T_j$'s are independent, we can actually recover $S^\parenth{j}(x)$\\
+
+\subsubsection{A Mathematical Aside on O-notation}
+
+An understanding of this notation is needed for a theorem coming up, so we switch gears to just understanding some math with a quick example to show how this works.
+
+\begin{definition}[Big $\mathcal{O}$-Notation]
+\label{defn:bigO}
+    $\mathcal{O}$-notation describes the order of a function $f(h)$. $f(h)$ is $\mathcal{O}(h^\alpha)$ (notated as $f(h) = \mathcal{O}(h^\alpha)$) if:
+    $$\frac{\abs{f(h)}}{\abs{h}^\alpha}$$
+    is bounded for $h$ in a neighbourhood of 0.
+\end{definition}
+
+\begin{definition}[Little o-Notation]
+\label{defn:littleo}
+    This notation describes the \textit{small order(?)} of a function $f(h)$. We say $f(h) = o(h^\alpha)$ if:
+    $$\limzero{h}\frac{\abs{f(h)}}{\abs{h}^\alpha}=0$$
+\end{definition}
+
+We illustrate these two definitions with some examples that will come in handy in the next proof (that's why they're called lemmas)!
+
+\begin{lemma}
+\label{lem:competeriskO}
+An important example of $\mathcal{O}$-notation:
+    \label{result:probjoint_to_h}$$P\bracketh{(x\leq T_j<x+h) \cap_{i\neq j}(T_i > T_j)} = P\bracketh{(x\leq T_j<x+h) \cap_{i\neq j}(T_i > x)} + \mathcal{O}(h^2)$$
+\end{lemma}
+
+\begin{proof}
+    To show this fact is true, we equivalently (and more clear from the notation) that:
+    $$\underbrace{P\bracketh{(x\leq T_j<x+h) \cap_{i\neq j}(T_i > T_j)}  -P\bracketh{(x\leq T_j<x+h) \cap_{i\neq j}(T_i > x)}}_{:=f(h)} =\mathcal{O}(h^2)$$
+    Which requires us to show that the following is bounded:
+    $$\frac{\abs{f(h)}}{h^2}$$
+    I'll take a graphical approach to solving the problem. It's first important to recognize that we are bounding a difference in probability, so let's start by plotting the probability space.
+
+    \begin{figure}[H]
+        \includegraphics[width=\textwidth]{SetUp_Images/bigoproof.png}
+        \caption{Event space of both events mentioned in $f(h)$ denoted by the grey space}
+    \end{figure}
+\end{proof}
+
+Notice how the right side is larger by a triangle of length/width of $h$, meaning the volume differs by $\frac{1}{2}h^2$. This implies that $f(h) = P(\textit{triangle space})$ which, by the volume of a triangle, is $O(h^2)$
+
+We now prove one more result before going back to survival.
+
+\begin{lemma}
+\label{lem:littleo_competer}
+    $$f(h) = O(h^2) \implies f(h) = o(h)$$
+\end{lemma}
+\begin{proof}
+    \begin{align*}
+        f(h) = O(h^2) &\implies \exists M: \frac{\abs{f(h)}}{h^2}\leq M \text{ by \cref{defn:bigO}}\\
+        &\implies \frac{\abs{f(h)}}{h} \leq hM\\
+        &\implies \limzero{h} \frac{\abs{f(h)}}{h} = 0\\
+        &\implies f(h) = o(h) \text{ by \cref{defn:littleo}}
+    \end{align*}
+\end{proof}
+
+
+\begin{theorem}[\textbf{The independence of failure causes implies that the observed cause-specific hazard function is equal to the true cause-specific hazard function}] 
+\label{thm:IndepOfCompeteRisks}
+Mathematically, this is presented as:
+\begin{align*}
+    &\forall i\neq j, T_i\perp T_j \implies \\ &\lambda_U^\parenth{j}(x) = \lambda^\parenth{j}(x) \forall j \text{ or, equivalently}\\
+    &\limzero{h} \bracketh{\frac{P(x\leq U < x+h, \Delta=j \mid U\geq x)}{h}} = \limzero{h} \bracketh{\frac{P(x\leq T_j < x+h \mid T_j\geq x)}{h}}
+\end{align*}
+Where, again $(U, \Delta)$ is the observed failure time and failure cause.
+\end{theorem}
+
+\begin{proof}
+    \begin{align*}
+        \lambda_U^\parenth{j}(x) &= \limzero{h} \bracketh{\frac{P(x\leq U < x+h, \Delta=j \mid U\geq x)}{h}} \text{ by \cref{defn:competerisk}}\\
+        &= \frac{\limzero{h}\bracketh{h^{-1}P(x\leq U < x+h, \Delta = j)}}{P(U\geq x)}\\
+        &= \frac{\limzero{h}\bracketh{h^{-1}P\sqrbracketh{(x\leq T_j < x+h) \cap_{l\neq j}(T_l > T_j)}}}{P\sqrbracketh{\cap_{l=1}^k (T_l \geq x)}}\\
+        &= \frac{\limzero{h}\bracketh{h^{-1}P\sqrbracketh{(x\leq T_j < x+h) \cap_{l\neq j}(T_l > x)}+\mathcal{O}(h^2)}}{P\sqrbracketh{\cap_{l=1}^k (T_l \geq x)}} \text{ by \cref{lem:competeriskO}}\\
+        &=
+        \frac{\limzero{h}\bracketh{h^{-1}P\sqrbracketh{(x\leq T_j < x+h) \cap_{l\neq j}(T_l > x)}}}{P\sqrbracketh{\cap_{l=1}^k (T_l \geq x)}} \text{ by \cref{lem:littleo_competer}}\marginnote{as $O(h^2)=o(h) \rightarrow 0$ , as $h\rightarrow 0$}\\
+        &= \frac{\limzero{h}\bracketh{h^{-1}P\sqrbracketh{(x\leq T_j < x+h)}}\sqrbracketh{P(\cap_{l\neq j}(T_l > x))}}{P\sqrbracketh{\cap_{l=1}^k (T_l \geq x)}}\\
+        &= \frac{\limzero{h}\bracketh{h^{-1}P\sqrbracketh{(x\leq T_j < x+h)}}}{P\sqrbracketh{T_j \geq x}}\\
+        &= \lambda^\parenth{j}(x) \text{ by \cref{defn:competerisk}}
+    \end{align*}
+\end{proof}
+
+\begin{lemma}
+\label{altform:indepsurv_competer}
+    If each competing risk $T_1,...,T_k$ are mutually independent, we can rewrite cause-specific hazard as a function of the observed data.
+
+    \begin{align*}
+        S^\parenth{j}(x) &= \e{-\Lambda^\parenth{j}(x)} \text{ by \cref{defn:competerisk}}\\
+        &= \e{-\Lambda^\parenth{j}_U(x)} \text{ by \cref{thm:IndepOfCompeteRisks}}\\
+        &= \e{-\int_0^x \frac{\deriv{u}F_U^\parenth{j}(u)}{S_U(u)} du} \text{ by \cref{defn:competerisk} and \cref{thm:1:1relationships}}\\
+        &= \e{-\int_0^x \frac{dF_U^\parenth{j}(u)}{S_U(u)}} \text{ cancelling $du$'s}
+    \end{align*}
+
+    From the above, we can also see that if competing risks are independent, we can rewrite the cumulative hazard:
+    $$\Lambda^\parenth{j}(x) = \int_0^x \frac{dF_U^\parenth{j}(u)}{S_U(u)}$$
+\end{lemma}
+
+The above lemma gives us a function for the cause-specific hazard, as a function of the observed data $(U_i, \Delta_i)_{i=1}^N$, thus making it estimable.
+
+\section{Dependent Competing Risks}
+
+The problem with the estimation arises when the causes of death aren't independent. Each cause-specific survival function becomes unidentifiable, as we can no longer use \cref{thm:IndepOfCompeteRisks}. So far, the most we can do is provide a bound for a cause-specific hazard function, as studied by Peterson (1976)
+
+\begin{theorem}[\textbf{Bounds for Cause-Specific Hazard in Nonidentifiable Competing Risks}]
+
+Suppose we have 2 non-independent competing risks, then the bounds for a cause-specific survival function can be described as:
+$$S_U^\parenth{1}(t) + S_U^\parenth{2}(t) \leq S^\parenth{1}\leq S_U^\parenth{1}(t) + S_U^\parenth{2}(0)$$
+    
+\end{theorem}
+
+\begin{proof}
+    While Dr. Tsiatis presents this proof more through diagrams and illustrations, I find that the original proof from Peterson (1976) is more "exact" and relatively easy to follow.
+
+    We start by noticing the following:
+    $$S^\parenth{1}(t)=P(T_1 \geq t) = \underbrace{P(T_1\geq t, T_2 \geq 0, T_1 \leq T_2)}_{:=A} + \underbrace{P(T_1\geq t, T_2 \geq 0, T_1 > T_2)}_{:=B}$$
+    Where $T_2 > 0$ is always true, as failure time must be a non-negative random variable, and we then split up the probability into the two cases by the last term.
+
+    We start by finding the \textit{upper bounds} for $A$ and $B$:
+    \begin{itemize}
+        \item[\textbf{A.}] \begin{align*}
+            P(T_1\geq t, T_2 \geq 0, T_1 \leq T_2) &= P(T_1 \geq t, T_1 \leq T_2)\text{ as $T_2>0$ is vacuously true}\\
+            &= P(T_1 \geq t, \Delta = 1) \text{ as $T_1 \leq T_2$ implies failure from cause 1}\\
+            &= S_U^\parenth{1}(t) \text{ By \cref{defn:competerisk}}
+        \end{align*} 
+        \item[\textbf{B.}] \begin{align*}
+            P(T_1\geq t, T_2 \geq 0, T_1 > T_2) &\leq P(T_2 \geq 0, T_1 > T_2) \text{ less restrictions $\implies$ greater probability}\\
+            &= P(T_2 \geq 0, \Delta = 2) \text{ similar to above}\\
+            &= S_U^\parenth{2}(0) \text{ by \cref{defn:competerisk}}
+        \end{align*}
+    \end{itemize}
+
+    We then find the \textit{lower bounds} for $A$, and $B$
+    \begin{itemize}
+        \item[\textbf{A.}] \begin{align*}
+            P(T_1\geq t, T_2 \geq 0, T_1 \leq T_2) &\geq P(T_1 \geq t, T_2 \geq t, T_1\leq T_2) \text{ more restrictive $\implies$ less prob}\\
+            &= P(T_1 \geq t, T_1 \leq T_2) \text{ as $T_2 > t$ is vacuously true if $T_2 > T_1 \geq t$}\\
+            &= P(T_1 \geq t, \Delta=1) \text{ if $T_2>T_1$ then failure is from cause 1}\\
+            &= S_U^\parenth{1}(t) \text{ by \cref{defn:competerisk}}
+        \end{align*} 
+        \item[\textbf{B.}] \begin{align*}
+            P(T_1\geq t, T_2 \geq 0, T_1 > T_2) &\geq P(T_1 \geq t, T_2 \geq t, T_1 > T_2) \text{ more restrictive $\implies$ less prob}\\
+            &= P(T_2 \geq t, T_1 > T_2) \text{ as $T_1 > t$ is vacuously true if $T_1 > T_2 \geq t$}\\
+            &= P(T_2 \geq t, \Delta=2) \text{ if $T_1>T_2$ then failure is from cause 2}\\
+            &= S_U^\parenth{2}(t) \text{ by \cref{defn:competerisk}}
+        \end{align*} 
+    \end{itemize}
+    Then combine all of the solved bounds to obtain the desired result.
+\end{proof}
+
+\newpage
+
+\part{One-Sample \\Counting Processes}
+We start looking at the one-sample problem of estimating a survival distribution from a sample of possibly right-censored observations. Censored data can be thought of as a case of competing risks, where the time to failure is a competition of the time to death, $T$, and censoring time $C$. Our primary goal is to estimate $S_T(x)=P(T\geq x)$.
+
+\begin{definition}[Censored Observation]
+    A censored observation is based on the random variables of time to death, $T$, and time to failure, $C$. An observation in a case of possible censoring is:
+
+    $$(U, \Delta):$$
+    $$U = min(T,C)$$
+    $$\Delta = \begin{cases}
+        1 & T\leq C \text{ failure}\\
+        0 & T > C \text{ censoring}
+            \end{cases}$$
+
+Where we typically observe $n$ observations that are iid $(U_i,\Delta_i)_{i=1}^n$
+\end{definition}
+
+
+\section{Nelson-Aalen Estimator for $\Lambda^\parenth{1}(t)$}
+It is typical, in the one sample case, for us to want to find what the cumulative hazard is for death time. Recall from \cref{altform:indepsurv_competer}, that in the case that $C\perp T$, that the cumulative hazard, derived from the data, can be written as:
+
+$$\Lambda^\parenth{1}(t) = \int_0^t \frac{dF_U^\parenth{1}(k)}{S_U(k)}$$
+
+It is from this that we can get a natural estimator for the cumulative hazard function based on empirical distribution functions:
+
+\begin{definition}[Nelson-Aalen Estimator for Cumulative Hazard]
+\label{def:AN_cumhaz}
+    Based on the data, and independence of censoring and failure time (though I think this can be extended to any number of independent competing risks), we get the \textbf{Nelson-Aalen estimator for cumulative hazard}: 
+    $$\reallywidehat{\Lambda}^\parenth{1}_{NA}(t) := \int_0^t \frac{d\reallywidehat{F}^\parenth{1}_U(k)}{\reallywidehat{S}_U(k)} = \int_0^t \frac{dN^\parenth{1}_U(k)}{Y_U(k)}$$
+
+    Where, by the definition of what an empirical CDF is:
+    $$\reallywidehat{F}^\parenth{1}_U(k) := \frac{1}{n}\underbrace{\summation \I{u_i\leq k, \Delta_i = 1}}_{:=N_U^\parenth{1}(k)}$$
+    $$\reallywidehat{S}_U(k) := \frac{1}{n}\underbrace{\summation\I{u_i\geq k}}_{:=Y_U(k)}$$
+\end{definition}
+
+As for any verbal explanation of the meaning of these newly defined functions, $N_U(k)$ \textit{counts} the number of deaths that are observed in the sample up to (and including) time $k$. On the contrary, $Y_U(k)$ denotes the number of people in the sample who are still at risk (neither censored nor dead) at time $k$. Both of these give us a first idea of a \textit{counting process}, as they are both \textit{counting} the number of events that happens over time.
+
+\begin{definition}["General" Counting Process]
+    Non-mathematically, a \textbf{counting process} is a stochastic process which has sample paths which are right continuous with left-hand limits (cad lag), and are non-decreasing step functions taking jumps of size 1. 
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.5\textwidth]{1SampCountP_Images/Screenshot 2024-10-12 at 11.23.48 AM.png}
+        \caption{Example Counting Process, each jump is of size 1}
+       
+    \end{figure}
+\end{definition}
+
+Now that we have figured out what $\reallywidehat{\Lambda}^\parenth{1}_{NA}$, and how to write it as counting processes, we need to understand how to evaluate this integral and turn it from something abstract into something computable. The requires \textit{a lot} of math on integration. I will assume that the reader doesn't have much/any knowledge of measure theory and I will, hopefully, try to build up all of the relevant, calculus, then analysis, and measure to solve this integrand with respect to a counting process that I have laid out in \cref{def:AN_cumhaz}. \textbf{If you aren't sure how these integrals convert to sums, and want a mathematical understanding head to }\cref{APP-A} (not anywhere close to being done).
+
+\begin{lemma}
+    Because $\reallywidehat{\Lambda}_NA(t)$ is an integral with respect to a counting process of jump sizes of 1, we can rewrite the integral as a sum whenever the counting process takes a jump:
+
+    \begin{align*}
+        \reallywidehat{\Lambda}_{NA}(t) &= \int_0^t \frac{1}{Y_U(k)}dN^\parenth{1}_U(k) \text{ by \cref{def:AN_cumhaz}}\\
+        &= \sum_{i : u_i\leq t, \Delta_i=1}\frac{1}{Y_U(u_i)}\\
+        &= \sum_{i : u_i\leq t, \Delta_i=1} \bracketh{\sum_{j=1}^n\I{u_j\geq u_i}}^{-1}
+    \end{align*}
+
+    The first sum (over i's) represents the sum over all death times less than $t$. This is the sum that was created by the counting process. If you didn't want to read \cref{APP-A}, this is just because the counting process only takes values of 1 at each death time, so we have a non-zero weight at each death time.
+
+    The second sum is the number of people still alive after the $ith$ person dies...inverted.
+\end{lemma}
+
+\begin{theorem}[0-Difference of Expectation of Nelson-Aalen Estimator and True Cumulative Hazard]
+    Assuming the independence of the failure and censoring times, we can show that $\E{\reallywidehat{\Lambda}_{NA}(t)-\Lambda(t)}=0$.
+\end{theorem}
+\begin{proof}
+    We start by writing difference from the definition of both of the functions, then rewrite the difference of integrals as a sum over arbitrarily small intervals, then introduce a binomial distribution for the cumulative hazard (?) before finally taking an expectation.
+
+    Through the Steiljes approximation, we can rewrite the difference as a sum. Suppose we split $[0,t]$ into $m$ intervals, $0=t_0 < t_1 < ... < t_m=t$, by the fact that $Y_U(k)$ is left continuous:
+
+    \begin{align*}
+        \bracketh{\reallywidehat{\Lambda}_{NA}(t) - \Lambda(t)} &= \int_0^t \frac{1}{Y_U(k)}dN^\parenth{1}_U(k) - \lambda(k)dk\\
+        &= \int_0^t\frac{dN_U^\parenth{1}(k) - \lambda(k)Y_U(k)dk}{Y_U(k)}\\
+        &\approx \sum_{j=0}^{m-1}\frac{\Delta N_U^\parenth{1}(t_j) - \lambda(t_j)Y_U(t_j) \Delta (t_j)}{Y_U(t_j)}
+    \end{align*}
+    Where $\Delta N_U^\parenth{1}(t_j)$ represents the number of deaths in $(t_j, t_{j+1}]$, and $\Delta(t_j) = t_{j+1}-t_j$
+
+    Pivoting, let $\F_j$ represent all the information (number of people who died, who are censored, who are still at risk) up till time $t_j$. $\{\F_j\}_{j=1}^m$ is called a \textit{filtration}. More specifically, this filtration is defined as:
+
+    $$\F_j = \{(u_i, \Delta_i): u_i \leq t_j\}$$
+
+    From this definition, $Y_U(t_j^+)\mid \F_j$ is well known, and is a constant. This is because $Y_U(t_j^+)$ represents the number of people still alive after time $t_j$, so with a fixed sample size $n$ and with the knowledge of how many people died from $\F_j$, $Y_U(t_j^+)\mid\F_j$ is just the number of people still alive right after time $t_j$
+
+    We then see:
+    $$\Delta N_U^\parenth{1}(t_j)\mid \F_j \sim \bin(Y_U(t_j^+), \pi_j)$$
+    where
+    \begin{align*}
+        \pi_j &= P(t_j < U \leq t_{j+1}, \Delta = 1\mid U>t_j)\\
+        &= P(t_j < U \leq t_j + (t_{j+1}-t_j), \Delta = 1\mid U>t_j)\\
+        &= P(t_j < U \leq t_j + \Delta(t_j), \Delta = 1\mid U>t_j)\\
+        &= \frac{P(t_j < U \leq t_j + \Delta(t_j), \Delta = 1\mid U>t_j)}{\Delta(t_j)}\Delta(t_j)\\
+        &\approx \lambda_U^\parenth{1}(t_j)\Delta(t_j) \text{ for small $\Delta$, and by $\cref{defn:competerisk}$}\\
+        &= \lambda^\parenth{1}(t_j)\Delta(t_j) \text{ by \cref{thm:IndepOfCompeteRisks}}
+    \end{align*}
+    
+
+    As the number of people who fail in $(t_j, t_{j+1}]$ (aka $\Delta N_U^\parenth{1}(t_j)$) is a random variable based on the number of people left, $Y_U(t_j^+)$, and their probability for failing, $\pi_j$.
+
+    Now back to the regularly scheduled proof:
+
+    \begin{align*}
+        \bracketh{\reallywidehat{\Lambda}_{NA}(t) - \Lambda(t)} &\approx \sum_{j=0}^{m-1}\frac{\Delta N_U^\parenth{1}(t_j) - \lambda^\parenth{1}(t_j)Y_U(t_j) \Delta (t_j)}{Y_U(t_j)}\\
+        &\approx \sum_{j=0}^{m-1}\frac{\Delta N_U^\parenth{1}(t_j)-\pi_jY_U(t_j^+)}{Y_U(t_j)}\\
+        &:= \sum_{j=0}^{m-1}\frac{\Delta M_U(t_j)}{Y_U(t_j)}
+    \end{align*}
+    Where for convenience we let:
+    $\Delta M_U(t_j) := \Delta N_U(t_j) - \pi_j Y_U(t_j^+)$
+
+    Finally, we can show the expected difference is 0:
+
+    \begin{align*}
+        \E{\reallywidehat{\Lambda}_{NA}(t) - \Lambda(t)} &= \E{\sum_{j=0}^{m-1}\frac{\Delta M_U(t_j)}{Y_U(t_j)}} \text{ by above}\\
+        &= \sum_{j=0}^{m-1}\E{\E{\frac{\Delta M_U(t_j)}{Y_U(t_j)}\mid \F_j}} \text{ by law of total E}\\
+        &= \sum_{j=0}^{m-1}\E{\frac{\E{\Delta N_U^\parenth{1}(t_j)\mid\F_j}-\pi_jY_U(t_j^+)}{Y_U(t_j)}} \text{ is $\pi_j$ constant wrt $\F_j$?}\\
+        &= 0
+    \end{align*}
+\end{proof}
+
+
+
+\newpage
+
+\part{Counting and Martingale Processes}
+\section{Counting Processes}
+\begin{definition}["General" Counting Process]
+    Non-mathematically, a \textbf{counting process} is a stochastic process with sample paths that are right continuous with left-hand limits (cad lag), and are non-decreasing step functions taking jumps of size 1. 
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.5\textwidth]{1SampCountP_Images/Screenshot 2024-10-12 at 11.23.48 AM.png}
+        \caption{Example Counting Process, each jump is of size 1}
+       
+    \end{figure}
+
+    Typically denoted $N(u) = \summation \I{u_i \leq u}$ as it counts the number of observations observed up to time $t$.
+\end{definition}
+
+\begin{definition}[Information]
+\label{defn:filtration}
+We let $\F(u)$ notate all the information from the data up to point $u$, including the information at point $u$. Formally, this is called a sub-$\sigma$-algebra and can be defined as:
+
+$$\F(u) = \sigma \{(u_i, \Delta_i): u_i\leq u\}$$
+
+The family of $\F(u)$ is called a \textit{filtration}, and is \textit{adapted} to a counting process $N(u)$ if $N(u)\mid\F(u)$ is known. 
+\end{definition}
+
+\begin{definition}[Intensity Process]
+    \label{defn:intensity}
+    The \textbf{intensity process} of a counting process $N(u)$ is defined as a stochastic process $A(u):$
+
+    $$A(u):= \limzero{h}\cbra{\frac{\E{N(u)-N(u-h)\mid \F(u-h)}}{h}}$$
+
+    Overall this definition describes the set up where we know the information up to right now $(u-h)$, and asks how many people we expect to see in the next instant $(u)$. 
+\end{definition}
+
+\textit{Usually} we have the assumption that the probability we see more than one observation in the next instant ("in the next instant" being described as the time range $(u-h, u]$) is negligible. Thus we arrive at a redefinition of an intensity processes under this assumption
+\begin{lemma}
+    Suppose the probability of observing more than 1 event in the next instant is negligible. In that case, the intensity process is just the probability of observing a new count given what you've seen already. Mathematically, this is expressed as:
+
+    \begin{align*}
+        &\underbrace{P\cbra{\cbra{N(u)-N(u-h)\geq 2} \mid \F(u-h)}=O(h^2)}_{\text{negligible probability of more than 1 count}} \implies\\
+        & A(u) = \limzero{h} \cbra{\frac{P\cbra{N(u)-N(u-h)=1\mid \F(u-h)}}{h}}
+    \end{align*}
+\end{lemma}
+\begin{proof}
+    This simply follows from rewriting the expectation:
+    \begin{align*}
+        \E{N(u)-N(u-h)\mid \F(u-h)} =& \underbrace{0\cdot P(N(u)-N(u-h)=0\mid \F(u-h))}_{=0}+ \\
+        &1\cdot P(N(u)-N(u-h)=1\mid \F(u-h))+\\
+        &\underbrace{2\cdot P(N(u)-N(u-h)=2\mid \F(u-h)) + \dots}_{=O(h^2) \text{ by assumption}}\\
+        =& 1\cdot P(N(u)-N(u-h)=1\mid \F(u-h))
+    \end{align*}
+
+    Then we substitute back into the original $A(u)$ above to get the desired results.
+\end{proof}
+
+We also can also rewrite the relationship between the intensity process and the expectation using calculus notation:
+
+\begin{lemma}
+    \label{lem:smallchangeintensity}
+    If we let $df(u)$ represent the change $f(u)-f(u-h)$ for a limitingly small $h$, then we get that $$\E{dN(u)\mid\F(u^-)} = A(u)du$$ 
+\end{lemma}
+\begin{proof}
+    Note that $du=u-(u-h)=h$, and $dN(u) = N(u)-N(u-h)$. This gets us:
+    \begin{align*}
+        A(u) &= \limzero{h} \cbra{\frac{\E{N(u)-N(u-h)\mid \F(u-h)}}{h}}\\
+        &= \frac{\E{dN(u)\mid \F(u^-)}}{du}
+    \end{align*}
+    Where the substitution was made from the note, and the $\F(u^-)$ just represents the limit from the left of $\F(u)$.
+\end{proof}
+
+We now move to a larger result about the distribution of the number of number of events that happens in $du$, which in the limit gives us a distribution of the instantaneous failure. The following theorem clarifies.
+
+\begin{theorem}[Distribution of Number of Failures]
+\label{thm:dist_failtimes}
+    If we assume individuals to be independent then the distribution of the number of people who fail on $(u-h, u]$ given how many people we know who have already failed is binomial, where the number of trials is the number of people who remain (the risk set size) at the start of the interval, times the probability that a person fails on that interval given that they've at least survived to the start of the interval. Mathematically:
+
+    $$dN(u)\mid\F(u^-) = \cbra{N(u)-N(u-h)}\mid\F(u-h) \sim \bin(Y_U((u-h)^+), \pi_{h,U}(u))$$
+    
+    \begin{itemize}
+        \item Where $Y_U((u-h)^+) = \summation \I{u_i \geq (u-h)^+}$ represents the number of people who are left and still at risk of failure. It is equivalent to $n - N(u-h)$.
+
+        \item Where $\pi_{h,U}(u) = P(u-h < U_i \leq u, \Delta_i=1 \mid U_i>u-h)$ represents the probability of a given individual, who has survived to at least time $u-h$ to fail in the next instant ($du$).
+    \end{itemize}
+
+    There really isn't a proof of this result, its mostly a result of observing that each person can either fail or not in the next $du$ time ($(u, u-h]$) so it is inherently bernoulli with the probability of failure being the probability of failing in that interval.
+    
+\end{theorem}
+    
+
+For the independence of failure times, and the above results, we can simplify and rewrite the intensity process.
+
+\begin{lemma}
+    From the independence of failure times between individuals, we get that:
+
+    $$A(u) = \lambda_U^\parenth{1}(u)Y(u)$$
+\end{lemma}
+\begin{proof}
+First note that $\E{N(u)-N(u-h)\mid \F(u-h)} = \pi_{h,U}(u)Y\cbra{(u-h)^+}$ as a consequence of it being binomial distributed by \cref{thm:dist_failtimes}.
+    \begin{align*}
+        A(u) &=  \limzero{h}\cbra{\frac{\E{N(u)-N(u-h)\mid \F(u-h)}}{h}}\\
+        &= \limzero{h}\frac{\pi_{h,U}(u)Y\cbra{(u-h)^+}}{h} \text{ by note}\\
+        &= \cbra{\limzero{h}\frac{\pi_{h,U}(u)}{h}} \cdot\cbra{\limzero{h} Y\cbra{(u-h)^+}}\\
+        &= \cbra{\limzero{h}\frac{P(u-h < U_i \leq u, \Delta_i=1 \mid U_i>u-h)}{h}} Y(u) \text{ by defn of $\pi_{h,U}$, and lim}\\
+        &= \lambda^\parenth{1}_U(u)Y(u) \text{ by \cref{defn:competerisk}}
+    \end{align*}
+\end{proof}
+
+\newpage
+
+\part{Appendix A: Integrals}
+\label{APP-A}
+This isn't mathematically rigorous, and some definitions are flat out \textit{wrong}. The purpose of this is to get some kind of intuitive grasp of the simple cases of how these things work 
+\subsection{Reimann to Lebesgue Integrals}
+All of the following "theory" is done very loosely. In reality these things are more complicated and require a lot more math. A consequence of doing survival analysis is that we know our data lives in $\mathbb{R}$, so that's all I will be considering.
+
+
+Intuitively, the "$dx$" is a little width of the input space (in this case, some $x$) of your function $f$. So to get a rectangle you multiply that little width by the height of the function somewhere in that little width. You then add up those integrals and you get the area under the curve. This formulation provides us a volume (or area in a 2d case, and purely in a geometric sense) of how much "stuff" lies underneath a curve.
+
+To Lebesgue integration: why do we need it? We need a generalization of volume. Maybe that isn't terribly motivating, but it provides a good intuition as to \textit{how} we can use it.
+
+So how do we use the idea of volume in our world? Let start by letting $x\in \F$ being an \textit{event} in our \textit{event space}. In our world, we can define the volume of an event to be $p(x)$. \textbf{\textit{PROBABILITY IS VOLUME!}}. More precisely, probability is the volume of some event. This allows us to notate things more generally. It also gives us things like countable additivity pretty easy. Say you have two disjoint pieces, wouldn't you expect the addition of their volume to be equal to the volume of those pieces together? Maybe that intuition is only useful for me.
+
+Maybe some illustrations using this idea will be clear. Usually, we denote the CDF of a distribution to be a capital $F_X(x)$ 
+
+\newpage
+
+
+\end{document}
