@@ -2,7 +2,7 @@ project:
   type: website
 
 website:
-  title: "saspatel.github.io"
+  title: "Sahil S. Patel"
   navbar:
     left:
       - href: index.qmd

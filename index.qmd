@@ -1,5 +1,19 @@
 ---
-title: "saspatel.github.io"
+title: "Sahil S. Patel"
+about:
+    template: trestles
+    links:
+        - icon: linkedin
+          text: LinkedIn
+          url: https://www.linkedin.com/in/saspatel/
+        - text: "{{< fa envelope >}} Email"
+          url: mailto:sspate27@ncsu.edu
+        - text: "{{< ai orcid >}} ORCID 0009-0002-9417-3924"
+          url: https://orcid.org/0009-0002-9417-3924
+        - text: "{{< ai google-scholar >}} Google Scholar"
+          url: https://scholar.google.com/citations?user=shraJRsAAAAJ&hl=en
+image: img/Sahil_Patel.jpg
+comments: false
 ---
 
 This is a Quarto website.
