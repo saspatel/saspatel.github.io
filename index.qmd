@@ -16,10 +16,6 @@ image: img/Sahil_Patel.jpg
 comments: false
 ---
 
-This is a Quarto website.
+## Bio
 
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
-
-```{r}
-1 + 1
-```
+I am a current second-year PhD student in the Department of Statistics at North Carolina State University
